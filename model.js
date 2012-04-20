@@ -29,6 +29,9 @@ var ConversantSchema = new schema({
     activeChats : [String]
 });
 
+/* enableChat
+ * ativa na seção do usuario um chat com o user passado como parametro
+ */
 ConversantSchema.methods.enableChat = function(user){
     if(this.activeChats.indexOf(user) === -1)
     {
@@ -37,6 +40,9 @@ ConversantSchema.methods.enableChat = function(user){
     }
 };
 
+/* disableChat
+ * desativa na seção do usuario um chat com o user passado como parametro
+ */
 ConversantSchema.methods.disableChat = function(user){
     var i = this.activeChats.indexOf(user);
     if(i !== -1){
@@ -45,21 +51,29 @@ ConversantSchema.methods.disableChat = function(user){
     }
 };
 
+/* sendMessage
+ * envia uma mensagem e caso o chat ainda nao tenha sido ativado, ativa-o
+ */
 ConversantSchema.methods.sendMessage = function(params){
-    var newMessage = new Message({
-        message : params.message ,
-        from    : this._id ,
-	to      : params.to ,
-	status  : 'unread' ,
-        date    : new Date()
-    });
+    Conversant.find({user : params.to}, function(to){ 
+        var newMessage = new Message({
+            message : params.message ,
+            from    : this._id ,
+	    to      : to._id ,
+	    status  : 'unread' ,
+            date    : new Date()
+        });
 
-    newMessage.save(function(error){
-        if(error) throw error;
-	this.enableChat();
+        newMessage.save(function(error){
+            if(error) throw error;
+	    this.enableChat(params.to);
+        });
     });
 };
 
+/* forEachMessage
+ * itera sobre todas as mensagens do usuario
+ */
 ConversantSchema.methods.forEachMessage = function(cb){
     var to = this;
     Message.find({to : this._id}, function(error, messages){
@@ -71,12 +85,18 @@ ConversantSchema.methods.forEachMessage = function(cb){
     });
 };
 
+/* forEachUnreadMessage
+ * itera sobre todas as mensagens não lidas do usuario
+ */
 ConversantSchema.methods.forEachUnreadMessage = function(cb){
     this.forEachMessage(function(message){
         if(message.status === 'unread') cb(message);
     });
 };
 
+/* enableChat
+ * ativa a seção do usuario
+ */
 ConversantSchema.methods.connect = function(cb){
     this.lastCheck = new Date();
     this.status = 'online';
@@ -86,6 +106,9 @@ ConversantSchema.methods.connect = function(cb){
     });
 };
 
+/* disableChat
+ * desativa a seção do usuario
+ */
 ConversantSchema.methods.disconnect = function(cb){
     this.lastCheck = new Date();
     this.status = 'offline';
@@ -93,12 +116,18 @@ ConversantSchema.methods.disconnect = function(cb){
     this.save();
 };
 
+/* refreshStatus
+ * atualiza a seção do usuario
+ */
 ConversantSchema.methods.refreshStatus = function()
 {
     this.lastCheck = new Date();
     this.save();
 };
 
+/* checkStatus
+ * verifica se o usuario ainda esta online
+ */
 ConversantSchema.methods.checkStatus = function(){
     var now = new Date();
 
@@ -126,11 +155,17 @@ var MessageSchema = new schema({
     date       : Date
 });
 
+/* read
+ * marca a mensagem como lida
+ */
 MessageSchema.methods.read = function(){
     this.status='read';
     this.save();
 };
 
+/* enableChat
+ * ativa a seção do chat para os dois usuarios
+ */
 MessageSchema.methods.enableChat = function(){
     this.findTo(function(to){
         this.findFrom(function(from){
@@ -142,6 +177,9 @@ MessageSchema.methods.enableChat = function(){
     });
 };
 
+/* findFrom
+ * retorna o Conversant remetente da mensagem
+ */
 MessageSchema.methods.findFrom = function(cb){
     Conversant.find({_id : this.from}, function(error, conversants){
         if(error) throw error;
@@ -150,6 +188,9 @@ MessageSchema.methods.findFrom = function(cb){
     });  
 };
 
+/* findTo
+ * retorna o Conversant destinatário da mensagem
+ */
 MessageSchema.methods.findTo = function(cb){
     Conversant.find({_id : this.to}, function(error, conversants){
         if(error) throw error;
