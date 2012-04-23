@@ -23,7 +23,7 @@ mongoose.connect('mongodb://empreendemia:kawasaki88@staff.mongohq.com:10034/empr
 */
  
 var ConversantSchema = new schema({
-    user        : [String] ,
+    user        : {type : String, trim : true, required : true} ,
     status      : {type: String, enum : ['online', 'offline'], default : 'offline'} ,
     lastCheck   : {type : Date}, 
     activeChats : [String]
@@ -55,11 +55,14 @@ ConversantSchema.methods.disableChat = function(user){
  * envia uma mensagem e caso o chat ainda nao tenha sido ativado, ativa-o
  */
 ConversantSchema.methods.sendMessage = function(params){
-    Conversant.find({user : params.to}, function(to){ 
-        var newMessage = new Message({
+    Conversant.find({user : params.to}, function(error,to){ 
+        if(error) throw error
+        if(to[0] === undefined) throw "Usuário não encontrado."
+
+	var newMessage = new Message({
             message : params.message ,
             from    : this._id ,
-	    to      : to._id ,
+	    to      : to[0]._id ,
 	    status  : 'unread' ,
             date    : new Date()
         });
@@ -74,44 +77,45 @@ ConversantSchema.methods.sendMessage = function(params){
 /* forEachMessage
  * itera sobre todas as mensagens do usuario
  */
-ConversantSchema.methods.forEachMessage = function(cb){
+ConversantSchema.methods.messages = function(cb){
     var to = this;
     Message.find({to : this._id}, function(error, messages){
 	if(error) throw error;
-	
-	messages.forEach(function(message){
-	    cb(message);
-	});    
+	cb(messages);
     });
 };
 
 /* forEachUnreadMessage
  * itera sobre todas as mensagens não lidas do usuario
  */
-ConversantSchema.methods.forEachUnreadMessage = function(cb){
-    this.forEachMessage(function(message){
-        if(message.status === 'unread') cb(message);
+ConversantSchema.methods.unreadMessages = function(){
+    var to = this;
+    Message.find({to : this._id, status : 'unread'}, function(error, messages){
+	if(error) throw error;
+        cb(messages);
     });
 };
 
 /* enableChat
  * ativa a seção do usuario
  */
-ConversantSchema.methods.connect = function(cb){
+ConversantSchema.methods.connect = function(){
     this.lastCheck = new Date();
     this.status = 'online';
 
+    var conversant = this;
     this.save(function(error){
-        this.checkStatus();
+        conversant.checkStatus();
     });
 };
 
 /* disableChat
  * desativa a seção do usuario
  */
-ConversantSchema.methods.disconnect = function(cb){
+ConversantSchema.methods.disconnect = function(){
     this.lastCheck = new Date();
     this.status = 'offline';
+    for(var i = 0; i < this.activeChats.lenght; i++) this.disableChat(this.activeChats[i].user);
 
     this.save();
 };
@@ -130,12 +134,14 @@ ConversantSchema.methods.refreshStatus = function()
  */
 ConversantSchema.methods.checkStatus = function(){
     var now = new Date();
+    var conversant = this;
 
-    if(now.getTime() - this.lastCheck.getTime() > 10000) {
+    console.log(this.status);
+    if(now.getTime() - this.lastCheck.getTime() > 10000)
 	this.disconnect();
-	for(var i = 0; i < this.activeChats.lenght; i++) this.disableChat(this.activeChats[i].user);
-    }
-    else setTimeout(this.checkStatus, 5000);
+    
+    else setTimeout(function(){conversant.checkStatus()}, 5000);
+    
 };
 
 var Conversant = mongoose.model('Conversant', ConversantSchema);
@@ -200,7 +206,7 @@ MessageSchema.methods.findTo = function(cb){
 };
 
 MessageSchema.methods.toJson = function(){
-    return '{"message" : "' + this.message + '", "from" : "' + this.from + '", "to" : "' + this.to + '", "status" : "' + this.status + '", "date" : "' + this.date + '"}'
+    return '{"id" : "' + this._id + '", "message" : "' + this.message + '", "from" : "' + this.from + '", "to" : "' + this.to + '", "status" : "' + this.status + '", "date" : "' + this.date + '"}'
 }
 
 var Message = mongoose.model('Message', MessageSchema);
