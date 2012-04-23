@@ -72,10 +72,10 @@ app.get('/:userId/disconnect', function(request, response){
     
     Conversant.find({user : request.params.userId}, function(error, conversants){
         if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
-	if(conversants[0] === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        
-	var conversant = conversants[0];
-	if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+
+	var conversant = convesants[0];
+        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
+        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
 
 	conversant.disconnect();
 
@@ -101,13 +101,13 @@ app.get('/:userId/unread-messages', function(request, response){
     
     Conversant.find({user : request.params.userId}, function(error, conversants){
         if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
-	if(conversants[0] === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        
+
 	var conversant = conversants[0];
-	if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
+        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
 
 	conversant.refreshStatus();
-        
+
 	conversant.unreadMessages(function(messages){
 	    var length = messages.length;
 	    response.write('__parseJSONResponse({"error" : "", "messages" : [');	    
@@ -140,10 +140,10 @@ app.get('/:userId/messages', function(request, response){
     
     Conversant.find({user : request.params.userId}, function(error, conversants){
         if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
-	if(conversants[0] === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        
-	var conversant = conversants[0];
-	if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+
+        var conversant = conversants[0];
+        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
+        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
 
 	conversant.refreshStatus();
         
@@ -178,12 +178,14 @@ app.get('/:userId/send-message', function(request, response){
     
     Conversant.find({user : request.params.userId}, function(error, conversants){
         if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
-	if(conversants[0] === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        
+	
 	var conversant = conversants[0];
-	if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
+        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
 
-        console.log(request.params.message);
+        conversant.sendMessage({message : request.params.message, to : request.params.to});
+
+        response.end('__parseJSONResponse({"error" : ""})');
     });
 });
 
@@ -204,13 +206,11 @@ app.get('/:userId/active-chats', function(request, response){
     
     Conversant.find({user : request.params.userId}, function(error, conversants){
         if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
-	if(conversants[0] === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        
-	var conversant = conversants[0];
-	if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+	
+        var conversant = conversants[0];
+        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
+        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
 
-	conversant.refreshStatus();
-        
 	var length = conversant.activeChats.length;
 	response.write('__parseJSONResponse({"error" : "", "activeChats" : [');	    
 	    

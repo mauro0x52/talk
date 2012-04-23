@@ -88,7 +88,7 @@ ConversantSchema.methods.messages = function(cb){
 /* forEachUnreadMessage
  * itera sobre todas as mensagens não lidas do usuario
  */
-ConversantSchema.methods.unreadMessages = function(){
+ConversantSchema.methods.unreadMessages = function(cb){
     var to = this;
     Message.find({to : this._id, status : 'unread'}, function(error, messages){
 	if(error) throw error;
