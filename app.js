@@ -24,6 +24,10 @@ app.configure(function(){
     app.use(express.errorHandler());
 });
 
+app.get('/(load)?', function(request,response){
+    response.sendfile('chat.js');
+});
+
 /*----------------------------------------------------------------------------*/
 /** connect
 *
@@ -39,48 +43,84 @@ app.get('/:userId/connect', function(request, response){
 
     var Conversant = model.Conversant;
     
-    Conversant.find({user : request.params.userId}, function(error, conversants){
-        if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
+    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+        if(error){
+	    response.end(request.query.callback + '({"error" : "'+error+'"})');
+	    return;
+	}
 
-        var conversant;
-	if(conversants[0] === undefined)
+	if(conversant === null)
             conversant = new Conversant({user : request.params.userId});
-	else
-	    conversant = conversants[0];
 
-	conversant.connect();
+        if(conversant.status === 'offline')
+            conversant.connect();
 
-	response.end('__parseJSONPResponse({"error" : ""})');
-	
+	response.end(request.query.callback + '({"error" : ""})');
+
     });
 });
 
 /*----------------------------------------------------------------------------*/
-/** disconnect
+/** open-chat
 *
 * @ autor : Rafael Erthal
 * @ since : 2012-04
 *
-* @ description : Seta o status do usuario como desconectado
+* @ description : Seta o status do usuario como conectado ou cadastra ele no banco e seta-o como conectado
 *
-* @ param userId : identificação do usuário que esta disconectando do chat
+* @ param userId : identificação do usuário que esta conectando ao chat
 */
  
-app.get('/:userId/disconnect', function(request, response){
+app.get('/:userId/open-chat/:chatId', function(request, response){
 
     var Conversant = model.Conversant;
     
-    Conversant.find({user : request.params.userId}, function(error, conversants){
-        if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
+    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+        if(error){
+	    response.end(request.query.callback + '({"error" : "'+error+'"})');
+            return;
+        }
 
-	var conversant = convesants[0];
-        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+        if(conversant === null) {
+	    response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+	    return;
+	}
+        
+        conversant.enableChat(request.params.chatId, function(error,from,to){
+	    response.end(request.query.callback + '(' + JSON.stringify({error : error, from : from, to : to}) + ')');
+	});
+    });
+});
 
-	conversant.disconnect();
+/*----------------------------------------------------------------------------*/
+/** close-chat
+*
+* @ autor : Rafael Erthal
+* @ since : 2012-04
+*
+* @ description : Seta o status do usuario como conectado ou cadastra ele no banco e seta-o como conectado
+*
+* @ param userId : identificação do usuário que esta conectando ao chat
+*/
+ 
+app.get('/:userId/close-chat/:chatId', function(request, response){
 
-	response.end('__parseJSONPResponse({"error" : ""})');
-	
+    var Conversant = model.Conversant;
+    
+    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+        if(error){
+	    response.end(request.query.callback + '({"error" : "'+error+'"})');
+            return;
+        }
+
+        if(conversant === undefined) {
+	    response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+	    return;
+	}
+        
+        conversant.disableChat(request.params.chatId, function(error){
+	    response.end(request.query.callback + '({"error" : "' + error + '"})');
+	});   
     });
 });
 
@@ -95,31 +135,34 @@ app.get('/:userId/disconnect', function(request, response){
 * @ param userId : identificação do usuário que esta requisitando as mensagens
 */
  
-app.get('/:userId/unread-messages', function(request, response){
+app.get('/:userId/unread-messages/:chatId', function(request, response){
 
     var Conversant = model.Conversant;
     
-    Conversant.find({user : request.params.userId}, function(error, conversants){
-        if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
+    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+        if(error){
+            response.end(request.query.callback + '({"error" : "'+error+'"})');
+            return;
+        }
 
-	var conversant = conversants[0];
-        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+        if(conversant === null)
+	{
+	    response.end(request.query.callback + '({"error" : "Usário não encontrado"})');
+	    return;
+	}
 
-	conversant.refreshStatus();
+        if(conversant.status === 'offline'){
+	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    return;
+	}
 
-	conversant.unreadMessages(function(messages){
-	    var length = messages.length;
-	    response.write('__parseJSONResponse({"error" : "", "messages" : [');	    
-	    
-	    for(var i = 0; i < length; i++){	   
-                messages[i].read(); 
-	        response.write(messages[i].toJson());
-                if(i != length - 1) response.write(',');
-	    }
-	    
-	    response.end(']})');
-	});
+	conversant.unreadMessages(request.params.chatId, function(messages){
+	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')');
+
+            var length = messages.length; 
+            for(var i = 0; i < length; i++)
+                messages[i].read();
+        });
     });
 });
 
@@ -134,29 +177,29 @@ app.get('/:userId/unread-messages', function(request, response){
 * @ param userId : identificação do usuário que esta requisitando as mensagens
 */
  
-app.get('/:userId/messages', function(request, response){
+app.get('/:userId/messages/:chatId', function(request, response){
 
     var Conversant = model.Conversant;
     
-    Conversant.find({user : request.params.userId}, function(error, conversants){
-        if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
+    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+        if(error){
+            response.end(request.query.callback + '({"error" : "'+error+'"})');
+            return;
+        }
 
-        var conversant = conversants[0];
-        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
-
-	conversant.refreshStatus();
+        if(conversant === null)
+	{
+	    response.end(request.query.callback + '({"error" : "Usário não encontrado"})');
+	    return;
+	}
         
-	conversant.messages(function(messages){
-	    var length = messages.length;
-	    response.write('__parseJSONResponse({"error" : "", "messages" : [');	    
-	    
-	    for(var i = 0; i < length; i++){	    
-	        response.write(messages[i].toJson());
-                if(i != length - 1) response.write(',');
-	    }
-	    
-	    response.end(']})');
+        if(conversant.status === 'offline'){
+	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    return;
+	}
+         
+	conversant.messages(request.params.chatId, function(messages){ 
+	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')');
 	});
     });
 });
@@ -172,20 +215,29 @@ app.get('/:userId/messages', function(request, response){
 * @ param userId : identificação do usuário que esta verificando as conversas
 */
  
-app.get('/:userId/send-message', function(request, response){
+app.get('/:userId/send-message/:to', function(request, response){
 
     var Conversant = model.Conversant;
     
-    Conversant.find({user : request.params.userId}, function(error, conversants){
-        if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
-	
-	var conversant = conversants[0];
-        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+        if(error){
+            response.end(request.query.callback + '({"error" : "'+error+'"})');
+            return;
+        }
 
-        conversant.sendMessage({message : request.params.message, to : request.params.to});
+        if(conversant === null){
+	    response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+	    return;
+	}
 
-        response.end('__parseJSONResponse({"error" : ""})');
+        if(conversant.status === 'offline'){
+	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    return;
+	}
+
+	conversant.sendMessage({message : request.query.message, to : request.params.to});
+
+        response.end(request.query.callback + '({"error" : ""})');
     });
 });
 
@@ -204,25 +256,24 @@ app.get('/:userId/active-chats', function(request, response){
 
     var Conversant = model.Conversant;
     
-    Conversant.find({user : request.params.userId}, function(error, conversants){
-        if(error) response.end('__parseJSONPResponse({"error" : "'+error+'"})');
+    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+        if(error) response.end(request.query.callback + '({"error" : "'+error+'"})');
 	
-        var conversant = conversants[0];
-        if(conversant === undefined) response.end('__parseJSONPResponse({"error" : "Usuário não encontrado"})');
-        if(conversant.status === 'offline') response.end('__parseJSONPResponse({"error" : "Usuário deslogado"})');
+        if(conversant === null){
+            response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+	    return;
+        }
 
-	var length = conversant.activeChats.length;
-	response.write('__parseJSONResponse({"error" : "", "activeChats" : [');	    
-	    
-	for(var i = 0; i < length; i++){	    
-	    response.write('"' + conversant.activeChats[i] + '"');
-            if(i != length - 1) response.write(',');
+        if(conversant.status === 'offline'){
+	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    return;
 	}
-	    
-	response.end(']})');
+
+        conversant.refreshStatus();
+        response.end(request.query.callback + "(" + JSON.stringify({error : "", activeChats : conversant.activeChats}) + ")");
     });
 });
 
 /*----------------------------------------------------------------------------*/
 
-app.listen(33888);
+app.listen(33889);

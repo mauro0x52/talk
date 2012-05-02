@@ -26,73 +26,137 @@ var ConversantSchema = new schema({
     user        : {type : String, trim : true, required : true} ,
     status      : {type: String, enum : ['online', 'offline'], default : 'offline'} ,
     lastCheck   : {type : Date}, 
-    activeChats : [String]
+    activeChats : [{user : {type : String}, kind : {type : String, enum : ['buyer','seller']}}]
 });
+
+/* indexOfActiveChat
+ * retorna o indice do chat com determinado usuario
+ */
+ConversantSchema.methods.indexOfActiveChat = function(user){
+    for(var i = 0; i < this.activeChats.length; i++)
+        if(this.activeChats[i].user === user) return i;
+    return -1
+};
 
 /* enableChat
  * ativa na seção do usuario um chat com o user passado como parametro
  */
-ConversantSchema.methods.enableChat = function(user){
-    if(this.activeChats.indexOf(user) === -1)
-    {
-	this.activeChats.push(user);
-	this.save();
-    }
+ConversantSchema.methods.enableChat = function(user, cb){
+    var from = this;
+    Conversant.find({user : user}, function(error, conversants){
+        if(error) throw error;
+        var to = conversants[0];
+        if(to === undefined){
+	    if(cb) cb("Usuáio não encontrado"); 
+	    return;
+	}
+
+        if(to.status === 'offline' || from.status === 'offline'){
+	    if(cb) cb("Usuário desconectado"); 
+	    return;
+	}
+
+        if(from.indexOfActiveChat(to.user) === -1)
+        {
+	    from.activeChats.push({user : to.user, kind : 'buyer'});
+            from.save();
+        }
+        
+	if(to.indexOfActiveChat(from.user) === -1)
+        {
+	    to.activeChats.push({user : from.user, kind : 'seller'});
+            to.save();
+        }
+
+	if(cb) cb("",from,to);
+    });
 };
 
 /* disableChat
  * desativa na seção do usuario um chat com o user passado como parametro
  */
-ConversantSchema.methods.disableChat = function(user){
-    var i = this.activeChats.indexOf(user);
-    if(i !== -1){
-	this.activeChats.splice(i, 1);
-	this.save();
-    }
+ConversantSchema.methods.disableChat = function(user,cb){
+    var from = this;
+    Conversant.find({user : user}, function(error, conversants){
+        if(error) throw error;
+        var to = conversants[0];
+	var i;
+
+        if(to === undefined){
+	    if(cb) cb("Usuáio não encontrado"); 
+	    return;
+	}
+	
+	i = from.indexOfActiveChat(to.user);
+        if(i !== -1)
+        {
+	    from.activeChats.splice(i,1);
+            from.save();
+        }
+        
+	i = to.indexOfActiveChat(from.user);
+	if(i !== -1)
+        {
+	    to.activeChats.splice(i,1);
+            to.save();
+        }
+
+	if(cb) cb("");
+    });
 };
 
 /* sendMessage
- * envia uma mensagem e caso o chat ainda nao tenha sido ativado, ativa-o
+ * envia uma mensagem
  */
 ConversantSchema.methods.sendMessage = function(params){
+    var id = this._id;
     Conversant.find({user : params.to}, function(error,to){ 
         if(error) throw error
         if(to[0] === undefined) throw "Usuário não encontrado."
 
-	var newMessage = new Message({
+	var newMessageFrom = new Message({
             message : params.message ,
-            from    : this._id ,
+            from    : id ,
 	    to      : to[0]._id ,
 	    status  : 'unread' ,
             date    : new Date()
         });
 
-        newMessage.save(function(error){
-            if(error) throw error;
-	    this.enableChat(params.to);
-        });
+        newMessageFrom.save();
     });
 };
 
-/* forEachMessage
- * itera sobre todas as mensagens do usuario
+/* messages
+ * todas as mensagens do usuario com user
  */
-ConversantSchema.methods.messages = function(cb){
-    var to = this;
-    Message.find({to : this._id}, function(error, messages){
-	if(error) throw error;
-	cb(messages);
+ConversantSchema.methods.messages = function(user, cb){
+    var id = this._id;
+    Conversant.find({user : user}, function(error, conversants){
+        if(error) throw error;
+	var user = conversants[0];
+	if(user === undefined) throw "Chat não encontrado.";
+
+        Message.find({$or : [{to : id, from : user._id}, {to : user._id, from : id}], status : 'read'},function(error, messages){
+	    if(error) throw error;
+	    cb(messages);
+        }); 
     });
 };
 
-/* forEachUnreadMessage
- * itera sobre todas as mensagens não lidas do usuario
+/* unreadMessages
+ * todas as mensagens não lidas do usuario com user
  */
-ConversantSchema.methods.unreadMessages = function(cb){
-    var to = this;
-    Message.find({to : this._id, status : 'unread'}, function(error, messages){
-	if(error) throw error;
-        cb(messages);
+ConversantSchema.methods.unreadMessages = function(user, cb){
+    var id = this._id;
+    Conversant.find({user : user}, function(error, conversants){
+        if(error) throw error;
+        var user = conversants[0];
+	if(user === undefined) throw "Chat não encontrado.";
+
+        Message.find({to : id, from : user._id, status : 'unread'}, function(error, messages){
+	    if(error) throw error;
+	    cb(messages);
+        }); 
     });
 };
 
@@ -103,8 +167,7 @@ ConversantSchema.methods.connect = function(){
     this.lastCheck = new Date();
     this.status = 'online';
 
-    var conversant = this;
-    this.save(function(error){
+    this.save(function(error, conversant){
         conversant.checkStatus();
     });
 };
@@ -115,7 +178,11 @@ ConversantSchema.methods.connect = function(){
 ConversantSchema.methods.disconnect = function(){
     this.lastCheck = new Date();
     this.status = 'offline';
-    for(var i = 0; i < this.activeChats.lenght; i++) this.disableChat(this.activeChats[i].user);
+
+    var activeChats = this.activeChats;
+    
+    for(var i = 0; i < activeChats.length; i++)
+        this.disableChat(activeChats[i]);
 
     this.save();
 };
@@ -133,15 +200,20 @@ ConversantSchema.methods.refreshStatus = function()
  * verifica se o usuario ainda esta online
  */
 ConversantSchema.methods.checkStatus = function(){
-    var now = new Date();
-    var conversant = this;
-
-    console.log(this.status);
-    if(now.getTime() - this.lastCheck.getTime() > 10000)
-	this.disconnect();
-    
-    else setTimeout(function(){conversant.checkStatus()}, 5000);
-    
+    var id = this._id
+    setTimeout(function(){
+        Conversant.find({_id : id}, function(error,data){
+	    if(error) throw error;
+            if(data[0] === undefined) throw "Usuário não encontrado.";
+            
+	    var now = new Date();
+	   
+	    if(now.getTime() - data[0].lastCheck.getTime() > 20000)
+	        data[0].disconnect();
+            else
+	        data[0].checkStatus();
+	});
+    }, 5000);
 };
 
 var Conversant = mongoose.model('Conversant', ConversantSchema);
@@ -168,46 +240,6 @@ MessageSchema.methods.read = function(){
     this.status='read';
     this.save();
 };
-
-/* enableChat
- * ativa a seção do chat para os dois usuarios
- */
-MessageSchema.methods.enableChat = function(){
-    this.findTo(function(to){
-        this.findFrom(function(from){
-	    if(to.status === 'online' && from.status === 'online'){
-                to.enableChat(from.user);
-		from.enableChat(to.user);
-	    }
-	});
-    });
-};
-
-/* findFrom
- * retorna o Conversant remetente da mensagem
- */
-MessageSchema.methods.findFrom = function(cb){
-    Conversant.find({_id : this.from}, function(error, conversants){
-        if(error) throw error;
-        if(conversants[0] === undefined) throw "Usuário não encontrado";
-        cb(conversants[0]);
-    });  
-};
-
-/* findTo
- * retorna o Conversant destinatário da mensagem
- */
-MessageSchema.methods.findTo = function(cb){
-    Conversant.find({_id : this.to}, function(error, conversants){
-        if(error) throw error;
-        if(conversants[0] === undefined) throw "Usuário não encontrado";
-        cb(conversants[0]);
-    }); 
-};
-
-MessageSchema.methods.toJson = function(){
-    return '{"id" : "' + this._id + '", "message" : "' + this.message + '", "from" : "' + this.from + '", "to" : "' + this.to + '", "status" : "' + this.status + '", "date" : "' + this.date + '"}'
-}
 
 var Message = mongoose.model('Message', MessageSchema);
 
