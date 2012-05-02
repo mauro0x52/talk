@@ -157,7 +157,7 @@ app.get('/:userId/unread-messages/:chatId', function(request, response){
 	}
 
 	conversant.unreadMessages(request.params.chatId, function(messages){
-	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')');
+	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')', 'utf8');
 
             var length = messages.length; 
             for(var i = 0; i < length; i++)
@@ -199,7 +199,7 @@ app.get('/:userId/messages/:chatId', function(request, response){
 	}
          
 	conversant.messages(request.params.chatId, function(messages){ 
-	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')');
+	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')', 'utf8');
 	});
     });
 });
