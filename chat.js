@@ -10,15 +10,15 @@ var Chat = function(chatId, kind){
 	else{
 	    if(kind === 'seller')
                 $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Converse com o visitante na sua página<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
-
             else
                 $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Oi, tudo bem?<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
+
 	    $.ajax({
                 url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/open-chat/' + chatId,
 	        dataType     : 'jsonp',
 	        cache        : false,
 	        timeout      : 1000,
-		async        : true,
+		async        : false,
 	        success      : render 
 	    });
 	}
@@ -53,18 +53,20 @@ var Chat = function(chatId, kind){
    
     var sendMessage = function()
     {
-        $.ajax({
-            url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/send-message/' + chatId,
-	    dataType     : 'jsonp',
-	    data         :{
-	        message  : $('#chat_'+div_id+' .chat_message').val() 
-	    },
-            success      : messageSent,
-	    cache        : false,
-	    timeout      : 1000 
-	});
-
-	return false;
+        try{
+            $.ajax({
+                url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/send-message/' + chatId,
+	        dataType     : 'jsonp',
+	        data         :{
+	            message  : $('#chat_'+div_id+' .chat_message').val() 
+	        },
+                success      : messageSent,
+	        cache        : false,
+	        timeout      : 1000 
+	    });
+	    return false;
+	}
+	catch(e){return false;}
     }
 
     var messageSent = function(){
@@ -76,16 +78,20 @@ var Chat = function(chatId, kind){
     }
 
     var readMessages = function(){
-        $.ajax({
-            url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/messages/' + chatId,
-	    dataType     : 'jsonp',
-            success      : renderMessages,
-	    cache        : false,
-	    timeout      : 1000
-	});
+        try{	
+            $.ajax({
+                url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/messages/' + chatId,
+	        dataType     : 'jsonp',
+                success      : renderMessages,
+	        cache        : false,
+	        timeout      : 1000
+	    });
+            setInterval(function(){if($('#chat_' + div_id).length) unreadMessages();}, 1000);
+	}
+	catch(e){readMessages();}
     };
 
-    var unreadMessages = function(){ 
+    var unreadMessages = function(){ {
         $.ajax({
             url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/unread-messages/' + chatId,
 	    dataType     : 'jsonp',
@@ -96,7 +102,7 @@ var Chat = function(chatId, kind){
     };
 
     var renderMessages = function(data){
-	if(data.error !== "") return;
+	if(data.error !== "") unreadMessages();
 
 	var messages = data.messages;
         var length = messages.length;
@@ -113,7 +119,6 @@ var Chat = function(chatId, kind){
 
             if(Chat.messageReceive)Chat.messageReceive(chatId, kind);	    
 	}
-	if($('#chat_' + div_id).length) setTimeout(unreadMessages, 1000);
     };
 
     open();
@@ -129,13 +134,19 @@ Chat.clearId = function (text) {
     text = text.replace(new RegExp('[ÓÒÔÕ]','gi'), 'o');
     text = text.replace(new RegExp('[ÚÙÛ]','gi'), 'u');
     text = text.replace(new RegExp('[Ç]','gi'), 'c');
+    text = text.replace(new RegExp('[áàâã]','gi'), 'a');
+    text = text.replace(new RegExp('[éèê]','gi'), 'e');
+    text = text.replace(new RegExp('[íìî]','gi'), 'i');
+    text = text.replace(new RegExp('[óòôõ]','gi'), 'o');
+    text = text.replace(new RegExp('[úùûũ]','gi'), 'u');
+    text = text.replace(new RegExp('[ç]','gi'), 'c');
     text = text.replace(new RegExp(' ','gi'), '');
     return text;
 }
 
 Chat.connect = function(params){
-    Chat.target        = Chat.clearId(params.target);
-    Chat.userId        = params.user;
+    Chat.target        = params.target;
+    Chat.userId        = Chat.clearId(params.user);
     Chat.messageSend   = params.messageSend;
     Chat.messageReceive= params.messageReceive;
     Chat.chatOpen      = params.chatOpen;
@@ -173,14 +184,15 @@ Chat.alert = function(){
 
 Chat.load = function(data){
     if(data.error !== "") return;
-
-    $.ajax({
-        url: 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/active-chats',
-        dataType     : 'jsonp',
-        success      : Chat.render,
-        cache        : false,
-        timeout      : 1000,
-    });   
+    setTimeout(function(){
+        $.ajax({
+            url: 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/active-chats',
+            dataType     : 'jsonp',
+            success      : Chat.render,
+            cache        : false,
+            timeout      : 1000,
+        });}
+	, 5000);
 };
 
 Chat.render = function(data){
@@ -202,5 +214,5 @@ Chat.render = function(data){
 	$(this).removeClass('chat_active');
     });
 
-    setTimeout('Chat.load({error : ""})', 5000);  
+    Chat.load({error : ""});  
 }
