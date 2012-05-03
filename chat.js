@@ -91,7 +91,7 @@ var Chat = function(chatId, kind){
 	catch(e){readMessages();}
     };
 
-    var unreadMessages = function(){ {
+    var unreadMessages = function(){
         $.ajax({
             url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/unread-messages/' + chatId,
 	    dataType     : 'jsonp',
