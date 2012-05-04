@@ -182,7 +182,8 @@ ConversantSchema.methods.disconnect = function(){
     var activeChats = this.activeChats;
     
     for(var i = 0; i < activeChats.length; i++)
-        this.disableChat(activeChats[i]);
+        if(activeChats[i] !== undefined)
+            this.disableChat(activeChats[i].user);
 
     this.save();
 };

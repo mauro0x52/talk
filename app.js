@@ -43,14 +43,17 @@ app.get('/:userId/connect', function(request, response){
 
     var Conversant = model.Conversant;
     
-    Conversant.findOne({user : request.params.userId}, function(error, conversant){
+    Conversant.find({user : request.params.userId}, function(error, conversants){
         if(error){
 	    response.end(request.query.callback + '({"error" : "'+error+'"})');
 	    return;
 	}
 
-	if(conversant === null)
+        var conversant;
+	if(conversants[0] === undefined)
             conversant = new Conversant({user : request.params.userId});
+        else
+            conversant = conversants[0];
 
         if(conversant.status === 'offline')
             conversant.connect();
