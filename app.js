@@ -40,12 +40,12 @@ app.get('/(load)?', function(request,response){
 */
  
 app.get('/:userId/connect', function(request, response){
-
+    response.header('Access-Control-Allow-Origin', '*');
     var Conversant = model.Conversant;
     
     Conversant.find({user : request.params.userId}, function(error, conversants){
         if(error){
-	    response.end(request.query.callback + '({"error" : "'+error+'"})');
+	    response.end('({"error" : "'+error+'"})');
 	    return;
 	}
 
@@ -58,7 +58,7 @@ app.get('/:userId/connect', function(request, response){
         if(conversant.status === 'offline')
             conversant.connect();
 
-	response.end(request.query.callback + '({"error" : ""})');
+	response.end('({"error" : ""})');
 
     });
 });
@@ -75,22 +75,23 @@ app.get('/:userId/connect', function(request, response){
 */
  
 app.get('/:userId/open-chat/:chatId', function(request, response){
+    response.header('Access-Control-Allow-Origin', '*');
 
     var Conversant = model.Conversant;
     
     Conversant.findOne({user : request.params.userId}, function(error, conversant){
         if(error){
-	    response.end(request.query.callback + '({"error" : "'+error+'"})');
+	    response.end('({"error" : "'+error+'"})');
             return;
         }
 
         if(conversant === null) {
-	    response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+	    response.end('({"error" : "Usuário não encontrado"})');
 	    return;
 	}
         
         conversant.enableChat(request.params.chatId, function(error,from,to){
-	    response.end(request.query.callback + '(' + JSON.stringify({error : error, from : from, to : to}) + ')');
+	    response.end('(' + JSON.stringify({error : error, from : from, to : to}) + ')');
 	});
     });
 });
@@ -107,22 +108,23 @@ app.get('/:userId/open-chat/:chatId', function(request, response){
 */
  
 app.get('/:userId/close-chat/:chatId', function(request, response){
+    response.header('Access-Control-Allow-Origin', '*');
 
     var Conversant = model.Conversant;
     
     Conversant.findOne({user : request.params.userId}, function(error, conversant){
         if(error){
-	    response.end(request.query.callback + '({"error" : "'+error+'"})');
+	    response.end('({"error" : "'+error+'"})');
             return;
         }
 
         if(conversant === undefined) {
-	    response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+	    response.end('({"error" : "Usuário não encontrado"})');
 	    return;
 	}
         
         conversant.disableChat(request.params.chatId, function(error){
-	    response.end(request.query.callback + '({"error" : "' + error + '"})');
+	    response.end('({"error" : "' + error + '"})');
 	});   
     });
 });
@@ -139,28 +141,29 @@ app.get('/:userId/close-chat/:chatId', function(request, response){
 */
  
 app.get('/:userId/unread-messages/:chatId', function(request, response){
+    response.header('Access-Control-Allow-Origin', '*');
 
     var Conversant = model.Conversant;
     
     Conversant.findOne({user : request.params.userId}, function(error, conversant){
         if(error){
-            response.end(request.query.callback + '({"error" : "'+error+'"})');
+            response.end('({"error" : "'+error+'"})');
             return;
         }
 
         if(conversant === null)
 	{
-	    response.end(request.query.callback + '({"error" : "Usário não encontrado"})');
+	    response.end('({"error" : "Usário não encontrado"})');
 	    return;
 	}
 
         if(conversant.status === 'offline'){
-	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    response.end('({"error" : "Usuário deslogado"})');
 	    return;
 	}
 
 	conversant.unreadMessages(request.params.chatId, function(messages){
-	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')');
+	    response.end('(' +JSON.stringify({error : "", messages : messages}) + ')');
 
             var length = messages.length; 
             for(var i = 0; i < length; i++)
@@ -181,28 +184,29 @@ app.get('/:userId/unread-messages/:chatId', function(request, response){
 */
  
 app.get('/:userId/messages/:chatId', function(request, response){
+    response.header('Access-Control-Allow-Origin', '*');
 
     var Conversant = model.Conversant;
     
     Conversant.findOne({user : request.params.userId}, function(error, conversant){
         if(error){
-            response.end(request.query.callback + '({"error" : "'+error+'"})');
+            response.end('({"error" : "'+error+'"})');
             return;
         }
 
         if(conversant === null)
 	{
-	    response.end(request.query.callback + '({"error" : "Usário não encontrado"})');
+	    response.end('({"error" : "Usário não encontrado"})');
 	    return;
 	}
         
         if(conversant.status === 'offline'){
-	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    response.end('({"error" : "Usuário deslogado"})');
 	    return;
 	}
          
 	conversant.messages(request.params.chatId, function(messages){ 
-	    response.end(request.query.callback + '(' +JSON.stringify({error : "", messages : messages}) + ')');
+	    response.end('(' +JSON.stringify({error : "", messages : messages}) + ')');
 	});
     });
 });
@@ -219,28 +223,29 @@ app.get('/:userId/messages/:chatId', function(request, response){
 */
  
 app.get('/:userId/send-message/:to', function(request, response){
+    response.header('Access-Control-Allow-Origin', '*');
 
     var Conversant = model.Conversant;
     
     Conversant.findOne({user : request.params.userId}, function(error, conversant){
         if(error){
-            response.end(request.query.callback + '({"error" : "'+error+'"})');
+            response.end('({"error" : "'+error+'"})');
             return;
         }
 
         if(conversant === null){
-	    response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+	    response.end('({"error" : "Usuário não encontrado"})');
 	    return;
 	}
 
         if(conversant.status === 'offline'){
-	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    response.end('({"error" : "Usuário deslogado"})');
 	    return;
 	}
 
 	conversant.sendMessage({message : request.query.message, to : request.params.to});
 
-        response.end(request.query.callback + '({"error" : ""})');
+        response.end('({"error" : ""})');
     });
 });
 
@@ -256,24 +261,25 @@ app.get('/:userId/send-message/:to', function(request, response){
 */
  
 app.get('/:userId/active-chats', function(request, response){
+    response.header('Access-Control-Allow-Origin', '*');
 
     var Conversant = model.Conversant;
     
     Conversant.findOne({user : request.params.userId}, function(error, conversant){
-        if(error) response.end(request.query.callback + '({"error" : "'+error+'"})');
+        if(error) response.end('({"error" : "'+error+'"})');
 	
         if(conversant === null){
-            response.end(request.query.callback + '({"error" : "Usuário não encontrado"})');
+            response.end('({"error" : "Usuário não encontrado"})');
 	    return;
         }
 
         if(conversant.status === 'offline'){
-	    response.end(request.query.callback + '({"error" : "Usuário deslogado"})');
+	    response.end('({"error" : "Usuário deslogado"})');
 	    return;
 	}
 
         conversant.refreshStatus();
-        response.end(request.query.callback + "(" + JSON.stringify({error : "", activeChats : conversant.activeChats}) + ")");
+        response.end("(" + JSON.stringify({error : "", activeChats : conversant.activeChats}) + ")");
     });
 });
 

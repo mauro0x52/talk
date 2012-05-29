@@ -10,10 +10,11 @@
 * @ description : Modelagem dos chats
 */
 
+var config = require('./config.js')
 var mongoose = require('mongoose'),
     schema = mongoose.Schema;
     
-mongoose.connect('mongodb://empreendemia:kawasaki88@staff.mongohq.com:10034/empreendemia');
+mongoose.connect('mongodb://' + config.dbUrl);
 
 /*----------------------------------------------------------------------------*/
 /** Conversant
