@@ -8,24 +8,19 @@
 */
 
 var express = require('express');
+var config = require('./config.js');
 var model = require('./model.js');
+var ejs = require('ejs')
 
 var app = module.exports = express.createServer();
 
 app.configure(function(){
-    
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(app.router);
-    
-    app.set('views', __dirname + '/views');
-    app.set('view engine', 'jade');
-    
-    app.use(express.errorHandler());
+    app.set('view engine', 'ejs');
+    app.set('view options', {layout : false});
 });
 
 app.get('/(load)?', function(request,response){
-    response.sendfile('chat.js');
+    response.render('chat.ejs', {baseUrl : 'http://' + config.baseUrl + ':' + config.port + '/'});
 });
 
 /*----------------------------------------------------------------------------*/
@@ -285,4 +280,4 @@ app.get('/:userId/active-chats', function(request, response){
 
 /*----------------------------------------------------------------------------*/
 
-app.listen(33889);
+app.listen(config.port);
