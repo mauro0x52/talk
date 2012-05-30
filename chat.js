@@ -159,6 +159,8 @@ var Chat = function(chatId, kind){
 	if(data.error !== "") readMessages();
 
 	var messages = data.messages;
+
+	if(messages === undefined) return;
         var length = messages.length;
 
         for(var i = 0; i < length; i++){
