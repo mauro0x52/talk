@@ -16,11 +16,17 @@ var app = module.exports = express.createServer();
 
 app.configure(function(){
     app.set('view engine', 'ejs');
+    app.disable('view cache');
     app.set('view options', {layout : false});
 });
 
 app.get('/(load)?', function(request,response){
+    response.header('Content-Type', 'text/javascript');
     response.render('chat.ejs', {baseUrl : 'http://' + config.baseUrl + ':' + config.port + '/'});
+});
+
+app.error(function(err){
+    console.log(err);
 });
 
 /*----------------------------------------------------------------------------*/
@@ -36,6 +42,7 @@ app.get('/(load)?', function(request,response){
  
 app.get('/:userId/connect', function(request, response){
     response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
     var Conversant = model.Conversant;
     
     Conversant.find({user : request.params.userId}, function(error, conversants){
@@ -71,6 +78,7 @@ app.get('/:userId/connect', function(request, response){
  
 app.get('/:userId/open-chat/:chatId', function(request, response){
     response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
 
     var Conversant = model.Conversant;
     
@@ -104,6 +112,7 @@ app.get('/:userId/open-chat/:chatId', function(request, response){
  
 app.get('/:userId/close-chat/:chatId', function(request, response){
     response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
 
     var Conversant = model.Conversant;
     
@@ -137,6 +146,7 @@ app.get('/:userId/close-chat/:chatId', function(request, response){
  
 app.get('/:userId/unread-messages/:chatId', function(request, response){
     response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
 
     var Conversant = model.Conversant;
     
@@ -180,6 +190,7 @@ app.get('/:userId/unread-messages/:chatId', function(request, response){
  
 app.get('/:userId/messages/:chatId', function(request, response){
     response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
 
     var Conversant = model.Conversant;
     
@@ -219,6 +230,7 @@ app.get('/:userId/messages/:chatId', function(request, response){
  
 app.get('/:userId/send-message/:to', function(request, response){
     response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
 
     var Conversant = model.Conversant;
     
@@ -257,6 +269,7 @@ app.get('/:userId/send-message/:to', function(request, response){
  
 app.get('/:userId/active-chats', function(request, response){
     response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
 
     var Conversant = model.Conversant;
     

@@ -29,11 +29,11 @@ function ajax(params)
             invocation = new window.XDomainRequest();
             if (invocation)
             {
+                invocation.open("GET", url);
                 invocation.onload = function()
 		{
                     success(eval(invocation.responseText));
                 };
-                invocation.open("GET", url, true);
                 invocation.send();
             }
         }
@@ -70,15 +70,17 @@ var Chat = function(chatId, kind){
     var open = function(){
 	if($('#chat_' + div_id).length) $('#chat_' + div_id).addClass('chat_active');
 	else{
-	    if(kind === 'seller')
-                $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Converse com o visitante na sua página<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
-            else
-                $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Oi, tudo bem?<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
-
-	    new ajax({
-                url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/open-chat/' + chatId,
-	        success      : render 
-	    });
+	    try{
+	        new ajax({
+                    url : 'http://empreendemia.no-ip.org:33889/' + Chat.userId + '/open-chat/' + chatId,
+	            success      : render,
+		    error        : open
+	        });
+	    }
+	    catch(e)
+	    {
+		open();
+	    }
 	}
     };
 
@@ -95,8 +97,12 @@ var Chat = function(chatId, kind){
     }
 
     var render = function(data){
+        if(kind === 'seller')
+            $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Converse com o visitante na sua página<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
+        else
+            $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Oi, tudo bem?<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
+
         if(data.error !== "") return;
-	if(Chat.open) Chat.chatOpen(chatId, kind);
         from = data.from;
 	to   = data.to;
         $('#chat_' + div_id).fadeIn();
@@ -105,6 +111,7 @@ var Chat = function(chatId, kind){
 
 	readMessages();
         setInterval(function(){if($('#chat_' + div_id).length) unreadMessages();}, 1000);
+	if(Chat.open) Chat.chatOpen(chatId, kind);
     }
    
     var sendMessage = function()
@@ -165,24 +172,33 @@ var Chat = function(chatId, kind){
 
         for(var i = 0; i < length; i++){
 	    if(messages[i].from === from._id)
-            	$('#chat_' + div_id + ' .messages_container').append((from.user.indexOf('IP') === -1 ? from.user : "Visitante") + " diz: " + messages[i].message + '<br />');  
+            	$('#chat_' + div_id + ' .messages_container').append((from.user.indexOf('IP') === -1 ? from.user : "Visitante") + " diz: " + unescape(messages[i].message) + '<br />');  
             else
-	        $('#chat_' + div_id + ' .messages_container').append((to.user.indexOf('IP') === -1 ? to.user : "Visitante") + " diz: " + messages[i].message + '<br />');  
+	        $('#chat_' + div_id + ' .messages_container').append((to.user.indexOf('IP') === -1 ? to.user : "Visitante") + " diz: " + unescape(messages[i].message) + '<br />');
 
 	    $('#chat_' + div_id + ' .messages_container').animate({"scrollTop": 900000});
 
 	    if(messages[i].status === 'unread') Chat.startAlert();
 
-            if(Chat.messageReceive)Chat.messageReceive(chatId, kind);	    
+            //if(Chat.messageReceive)Chat.messageReceive(chatId, kind);	    
 	}
     };
 
-    open();
+    var tryToOpen = function()
+    {
+        if(Chat.connected)
+            open();
+        else
+            setTimeout(tryToOpen, 2000);
+    }
+
+    tryToOpen();
 };
 
 Chat.alerting = false;
 Chat.oldTitle = document.title;
 Chat.baseUrl  = '<%=baseUrl%>';
+Chat.connected = false;
  
 Chat.clearId = function (text) {
     text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
@@ -240,6 +256,7 @@ Chat.alert = function(){
 
 Chat.load = function(data){
     if(data.error !== "") return;
+    Chat.connected = true;
     setInterval(function(){
         new ajax({
             url: Chat.baseUrl + Chat.userId + '/active-chats',
