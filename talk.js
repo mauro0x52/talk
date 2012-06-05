@@ -53,7 +53,7 @@ app.get('/:userId/connect', function(request, response){
 
         var conversant;
 	if(conversants[0] === undefined)
-            conversant = new Conversant({user : request.params.userId});
+            conversant = new Conversant({user : request.params.userId, company : request.query.companyId});
         else
             conversant = conversants[0];
 
@@ -288,6 +288,35 @@ app.get('/:userId/active-chats', function(request, response){
 
         conversant.refreshStatus();
         response.end("(" + JSON.stringify({error : "", activeChats : conversant.activeChats}) + ")");
+    });
+});
+
+/*----------------------------------------------------------------------------*/
+/** company-status
+*
+* @ autor : Rafael Erthal
+* @ since : 2012-06
+*
+* @ description : retorna se a empresa esta online ou offline
+*
+* @ param userId : identificação do usuário que esta verificando as conversas
+*/
+ 
+app.get('/:companyId/company-status', function(request, response){
+    response.header('Access-Control-Allow-Origin', '*');
+    response.header('Cache-Control', 'no-cache');
+
+    var Conversant = model.Conversant;
+    
+    Conversant.findOne({company : request.params.companyId, status : 'online'}, function(error, conversant){
+        if(error) response.end('({"error" : "'+error+'"})');
+	
+        if(conversant === null){
+            response.end('({"error" : "", "status" : "offline"})');
+        }
+	else{
+            response.end('({"error" : "", "status" : "online"})');
+	}
     });
 });
 

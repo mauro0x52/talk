@@ -24,6 +24,7 @@ mongoose.connect('mongodb://' + config.dbUrl);
 */
  
 var ConversantSchema = new schema({
+    company     : {type : String, trim : true} ,
     user        : {type : String, trim : true, required : true} ,
     status      : {type: String, enum : ['online', 'offline'], default : 'offline'} ,
     lastCheck   : {type : Date}, 

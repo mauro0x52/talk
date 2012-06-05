@@ -221,6 +221,7 @@ Chat.connect = function(params){
     try{
         Chat.target        = params.target;
         Chat.userId        = Chat.clearId(params.user);
+        Chat.companyId     = params.companyId;
         Chat.messageSend   = params.messageSend;
         Chat.messageReceive= params.messageReceive;
         Chat.chatOpen      = params.chatOpen;
@@ -231,6 +232,7 @@ Chat.connect = function(params){
         new ajax({
             url: Chat.baseUrl + Chat.userId + '/connect',
             success      : Chat.load,
+	    data         : {companyId : Chat.companyId},
 	    error        : function(){Chat.connect(params)}
         });
     }
@@ -252,6 +254,15 @@ Chat.alert = function(){
 	    document.title = Chat.oldTitle;
 	else
 	    document.title = "Nova mensagem";
+};
+
+Chat.showCompanyStatus = function(companyId)
+{
+    new ajax({
+        url: Chat.baseUrl + companyId + '/company-status',
+        success      : function(data){if(data.status === 'online'){$('#company_status_' + companyId).append("(online)");}},
+        error        : function(){Chat.showCompanyStatus(companyId);}
+    });
 };
 
 Chat.load = function(data){
