@@ -29,6 +29,13 @@ app.error(function(err){
     console.log(err);
 });
 
+var Conversant = model.Conversant;
+Conversant.find(function(error,conversants){
+    for(var conversant in conversants)
+    {
+        conversants[conversant].disconnect();
+    }
+});
 /*----------------------------------------------------------------------------*/
 /** connect
 *
@@ -286,6 +293,8 @@ app.get('/:userId/active-chats', function(request, response){
 	    return;
 	}
 
+	console.log(conversant);
+
         conversant.refreshStatus();
         response.end("(" + JSON.stringify({error : "", activeChats : conversant.activeChats}) + ")");
     });
@@ -323,14 +332,6 @@ app.get('/:companyId/company-status', function(request, response){
 /*----------------------------------------------------------------------------*/
 setTimeout(function(){
     
-    var Conversant = model.Conversant;
-    Conversant.find(function(error,conversants){
-        for(var conversant in conversants)
-	{
-	    conversants[conversant].disconnect();
-	}
-	process.exit(0)
-    });
 
 }, 60000000);
 
