@@ -321,5 +321,17 @@ app.get('/:companyId/company-status', function(request, response){
 });
 
 /*----------------------------------------------------------------------------*/
+setTimeout(function(){
+    
+    var Conversant = model.Conversant;
+    Conversant.find(function(error,conversants){
+        for(var conversant in conversants)
+	{
+	    conversants[conversant].disconnect();
+	}
+	process.exit(0)
+    });
+
+}, 60000000);
 
 app.listen(config.port);
