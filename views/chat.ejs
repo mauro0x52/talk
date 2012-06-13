@@ -66,6 +66,7 @@ var Chat = function(chatId, kind){
     var to = {};
     chatId = Chat.clearId(chatId);
     var div_id = chatId;
+    var typing_status = false;
 
     var open = function(){
 	if($('#chat_' + div_id).length) $('#chat_' + div_id).addClass('chat_active');
@@ -98,9 +99,9 @@ var Chat = function(chatId, kind){
 
     var render = function(data){
         if(kind === 'seller')
-            $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Converse com o visitante na sua página<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
+            $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Converse com o visitante na sua página<span class="chat_close">X</span></div><div class="messages_container"></div><div id="chat_typing_' + div_id + '" style="color:grey;"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
         else
-            $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Oi, tudo bem?<span class="chat_close">X</span></div><div class="messages_container"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
+            $(Chat.target).append('<div id="chat_' + div_id + '" class="chat_container active_chat" style="display:none;"><div class="chat_header">Oi, tudo bem?<span class="chat_close">X</span></div><div class="messages_container"></div><div id="chat_typing_' + div_id + '" style="color:grey;"></div><div class="form_container"><form><input type="text" class="chat_message" /><input type="submit" value="Enviar" /></form></div></div>');
 
         if(data.error !== "") return;
         from = data.from;
@@ -108,10 +109,38 @@ var Chat = function(chatId, kind){
         $('#chat_' + div_id).fadeIn();
 	$('#chat_' + div_id + ' form').submit(sendMessage);
 	$('#chat_' + div_id + ' .chat_close').click(close);
+	$('#chat_' + div_id + ' form .chat_message').keyup(typing);
 
 	readMessages();
         setInterval(function(){if($('#chat_' + div_id).length) unreadMessages();}, 1000);
 	if(Chat.open) Chat.chatOpen(chatId, kind);
+    }
+
+    var typing = function(){
+        if(typing_status === false){
+	    if($('#chat_' + div_id + ' form .chat_message').val() !== ''){
+                new ajax({
+                    url : Chat.baseUrl + Chat.userId + '/send-message/' + chatId,
+	            data         :{
+	                message  : 'systemcontrolmessageuserstarttyping'
+	            },
+		    success : function(){}
+	        });
+		typing_status = true;
+	    }
+	}
+	else{
+	    if($('#chat_' + div_id + ' form .chat_message').val() === ''){
+                new ajax({
+                    url : Chat.baseUrl + Chat.userId + '/send-message/' + chatId,
+	            data         :{
+	                message  : 'systemcontrolmessageuserstoptyping'
+	            },
+		    success : function(){}
+	        });
+		typing_status = false;
+	    }
+	}
     }
    
     var sendMessage = function()
@@ -130,8 +159,9 @@ var Chat = function(chatId, kind){
     }
 
     var messageSent = function(){
-        $('#chat_' + chatId + ' .messages_container').append((Chat.userId.indexOf('IP') === -1 ? Chat.userId : "Visitante") + " diz: " + $('#chat_' + chatId + ' .chat_message').val() + '<br />');  	
+        draw(unescape(Chat.label), $('#chat_' + chatId + ' .chat_message').val());
 	$('#chat_' + div_id + ' .chat_message').val('');
+        $('#chat_' + div_id + ' form .chat_message').trigger('keyup');
         $('#chat_' + div_id + ' .messages_container').animate({"scrollTop": 900000});
 
 	if(Chat.messageSend) Chat.messageSend(chatId, kind);
@@ -171,10 +201,22 @@ var Chat = function(chatId, kind){
         var length = messages.length;
 
         for(var i = 0; i < length; i++){
-	    if(messages[i].from === from._id)
-            	$('#chat_' + div_id + ' .messages_container').append((from.user.indexOf('IP') === -1 ? from.user : "Visitante") + " diz: " + unescape(messages[i].message) + '<br />');  
+	    if(messages[i].message === 'systemcontrolmessageuserstarttyping')
+	    {
+	        $('#chat_typing_' + div_id).html('Usuario esta digitando');
+	    }
+	    else if(messages[i].message === 'systemcontrolmessageuserstoptyping')
+	    {
+	        $('#chat_typing_' + div_id).html('');
+	    }
+	    else if(messages[i].from === from._id)
+	    {
+	        draw(unescape(from.label), unescape(messages[i].message));
+	    }
             else
-	        $('#chat_' + div_id + ' .messages_container').append((to.user.indexOf('IP') === -1 ? to.user : "Visitante") + " diz: " + unescape(messages[i].message) + '<br />');
+	    {
+	        draw(unescape(to.label), unescape(messages[i].message));
+	    }
 
 	    $('#chat_' + div_id + ' .messages_container').animate({"scrollTop": 900000});
 
@@ -183,6 +225,10 @@ var Chat = function(chatId, kind){
             //if(Chat.messageReceive)Chat.messageReceive(chatId, kind);	    
 	}
     };
+
+    var draw = function(name, message){
+        $('#chat_' + div_id + ' .messages_container').append("<div style='border-bottom:solid 1px #ddd; margin-bottom:4px; padding-bottom:4px;'><div style='color:grey; padding:4px;'>" + name + " diz:</div><div style='padding:4px;'>" + message + '<div></div>');  
+    }
 
     var tryToOpen = function()
     {
@@ -226,13 +272,14 @@ Chat.connect = function(params){
         Chat.messageReceive= params.messageReceive;
         Chat.chatOpen      = params.chatOpen;
         Chat.chatClose     = params.chatClose;
+        Chat.label         = params.label;
     
         setInterval(Chat.alert, 1000);
         $(Chat.target).click(Chat.stopAlert);
         new ajax({
             url: Chat.baseUrl + Chat.userId + '/connect',
             success      : Chat.load,
-	    data         : {companyId : Chat.companyId},
+	    data         : {companyId : Chat.companyId, label : Chat.label},
 	    error        : function(){Chat.connect(params)}
         });
     }
@@ -260,7 +307,7 @@ Chat.showCompanyStatus = function(companyId)
 {
     new ajax({
         url: Chat.baseUrl + companyId + '/company-status',
-        success      : function(data){if(data.status === 'online'){$('#company_status_' + companyId).append("(online)");}},
+        success      : function(data){if(data.status === 'online'){$('#company_status_' + companyId).append("(estamos online)");}},
         error        : function(){Chat.showCompanyStatus(companyId);}
     });
 };
@@ -289,7 +336,7 @@ Chat.render = function(data){
 	for(var i = 0; i < length; i++)
 	    if($(this).attr('id') === 'chat_' + activeChats[i].user) return;
          
-	$('#' + $(this).attr('id') + ' .messages_container').append('Usuário saiu da conversa.<br />');
+	$('#' + $(this).attr('id') + ' .messages_container').append('<div style="color:grey; font-style:italic;">Usuário saiu da conversa.</div><br />');
 	$('#' + $(this).attr('id') + ' .messages_container').animate({"scrollTop": 900000});
 
 	$(this).removeClass('chat_active');

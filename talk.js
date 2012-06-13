@@ -60,7 +60,7 @@ app.get('/:userId/connect', function(request, response){
 
         var conversant;
 	if(conversants[0] === undefined)
-            conversant = new Conversant({user : request.params.userId, company : request.query.companyId});
+            conversant = new Conversant({user : request.params.userId, company : request.query.companyId, label : request.query.label});
         else
             conversant = conversants[0];
 

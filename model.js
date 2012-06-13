@@ -26,6 +26,8 @@ mongoose.connect('mongodb://' + config.dbUrl);
 var ConversantSchema = new schema({
     company     : {type : String, trim : true} ,
     user        : {type : String, trim : true, required : true} ,
+    label       : {type : String, trim : true, required : true} ,
+    typing      : {type : Boolean, required : true, default : false} ,
     status      : {type: String, enum : ['online', 'offline'], default : 'offline'} ,
     lastCheck   : {type : Date}, 
     activeChats : [{user : {type : String}, kind : {type : String, enum : ['buyer','seller']}}]
@@ -138,7 +140,7 @@ ConversantSchema.methods.messages = function(user, cb){
 	var user = conversants[0];
 	if(user === undefined) throw "Chat não encontrado.";
 
-        Message.find({$or : [{to : id, from : user._id}, {to : user._id, from : id}], status : 'read'},function(error, messages){
+        Message.find({$or : [{to : id, from : user._id}, {to : user._id, from : id}], status : 'read', message : {$nin : ['systemcontrolmessageuserstarttyping','systemcontrolmessageuserstoptyping']}},function(error, messages){
 	    if(error) throw error;
 	    cb(messages);
         }); 
@@ -180,6 +182,7 @@ ConversantSchema.methods.connect = function(){
 ConversantSchema.methods.disconnect = function(){
     this.lastCheck = new Date();
     this.status = 'offline';
+    this.typing = false;
 
     var activeChats = this.activeChats;
     
