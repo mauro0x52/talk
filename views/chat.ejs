@@ -203,7 +203,7 @@ var Chat = function(chatId, kind){
         for(var i = 0; i < length; i++){
 	    if(messages[i].message === 'systemcontrolmessageuserstarttyping')
 	    {
-	        $('#chat_typing_' + div_id).html('Usuario esta digitando');
+	        $('#chat_typing_' + div_id).html('O usuario esta digitando');
 	    }
 	    else if(messages[i].message === 'systemcontrolmessageuserstoptyping')
 	    {
@@ -336,7 +336,7 @@ Chat.render = function(data){
 	for(var i = 0; i < length; i++)
 	    if($(this).attr('id') === 'chat_' + activeChats[i].user) return;
          
-	$('#' + $(this).attr('id') + ' .messages_container').append('<div style="color:grey; font-style:italic;">Usuário saiu da conversa.</div><br />');
+	$('#' + $(this).attr('id') + ' .messages_container').append('<div style="color:grey; font-style:italic;">O usuário saiu da conversa.</div><br />');
 	$('#' + $(this).attr('id') + ' .messages_container').animate({"scrollTop": 900000});
 
 	$(this).removeClass('chat_active');
