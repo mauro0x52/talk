@@ -330,9 +330,52 @@ app.get('/:companyId/company-status', function(request, response){
 });
 
 /*----------------------------------------------------------------------------*/
-setTimeout(function(){
-    
+/** panel
+*
+* @ autor : Rafael Erthal
+* @ since : 2012-06
+*
+* @ description : painel de controle do chat
+*/
+ 
+app.get('/panel', function(request, response){
 
-}, 60000000);
+    var Conversant = model.Conversant;
+    
+    Conversant.find({label : {$ne : 'Visitante'}},function(error, conversants){
+        if(error) response.end('({"error" : "'+error+'"})');
+	response.write("<table border CELLSPACING='2px'>");
+
+	response.write(
+	    "<tr>"+
+	    "    <td>Usuario</td>"+
+	    "    <td>Total de Conversas</td>"+
+	    "    <td>Chat Started</td>"+
+	    "    <td>Chat Started Reply</td>"+
+	    "    <td>Chat Received</td>"+
+	    "    <td>Chat Received Reply</td>"+
+	    "</tr>"
+	);
+
+	for(var i = 0; i<conversants.length; i++)
+	{
+	    conversants[i].chats(function(conversant,chats,chatstarted,chatreceived){
+	        response.write(
+	            "<tr>" +
+		    "    <td>" + conversant.label  + "</td>"+
+		    "    <td>" + chats.length + "</td>"+
+		    "    <td>" + chatstarted + "</td>"+
+		    "    <td></td>"+
+		    "    <td>" + chatreceived + "</td>"+
+		    "    <td></td>"+
+	            "</tr>"
+	        ); 
+	    });
+	}
+
+	setTimeout(function(){response.end("</table>")}, 2000);
+    });
+});
+/*----------------------------------------------------------------------------*/
 
 app.listen(config.port);
