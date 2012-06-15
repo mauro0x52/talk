@@ -360,50 +360,55 @@ app.get('/panel', function(request, response){
 	for(var i = 0; i<conversants.length; i++)
 	{
 	    conversants[i].chats(function(conversant,chats){
-	        response.write(
-		    var chatStarted = 0,
-		        chatStartedReply = 0;
-			chatReceived = 0;
-			chatReceivedReply = 0;
+		var chatStarted = 0,
+		    chatStartedReply = 0,
+		    chatReceived = 0,
+		    chatReceivedReply = 0,
+		    chatCount = 0;
 
-		    for(var i = 0; i < chats.length; i++)
+		for(var chat in chats)
+	        {
+		    if(chats[chat].messages !== undefined)
 		    {
-		        var firstMessage = chats[i].messages[0];,
-			    meSend = false;
-			    otherSend = false;
+		        var firstMessage = chats[chat].messages[0],
+		            meSend = false,
+		            otherSend = false;
 
-			for(var j = 1; j < chats[i].messages.length; j++)
-			{
-			    if(chats[i].messages[j].date < firstMessage.date)
-			    {
-			        firstMessage = chats[i].messages[j];
-			    }
+		        for(var j = 1; j < chats[chat].messages.length; j++)
+		        {
+		            if(chats[chat].messages[j].date < firstMessage.date)
+		            {
+		                firstMessage = chats[chat].messages[j];
+		            }
 
-			    if(chats[i].messages[j].from.toString === conversant._id.toString())
-			    {
-			        meSend = true;
-			    }
-			    else
-			    {
-			        otherSend = true;
-			    }
-			}
+		            if(chats[chat].messages[j].from.toString() === conversant._id.toString())
+		            {
+		                meSend = true;
+		            }
+		            else
+		            {
+		                otherSend = true;
+		            }
+		        }
 
-			if(firstMessage.from.toString() === conversant._id.toString())
-			{
-			    chatStarted++;
-			    if(otherSend) chatStartedReply++;
-			}
-			else
-			{
-			    chatReceived++;
-			    if(meSend) chatReceivedReply++;
-			}
+		        if(firstMessage.from.toString() === conversant._id.toString())
+		        {
+		            chatStarted++;
+		            if(otherSend) chatStartedReply++;
+		        }
+		        else
+		        {
+		            chatReceived++;
+		            if(meSend) chatReceivedReply++;
+	                }
+
+			chatCount++;
 		    }
-
+		}
+                response.write(
 	            "<tr>" +
 		    "    <td>" + conversant.label  + "</td>"+
-		    "    <td>" + chats.length + "</td>"+
+		    "    <td>" + chatCount + "</td>"+
 		    "    <td>" + chatStarted + "</td>"+
 		    "    <td>" + chatStartedReply + "</td>"+
 		    "    <td>" + chatReceived + "</td>"+
