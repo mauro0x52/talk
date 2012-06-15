@@ -414,7 +414,17 @@ app.get('/panel', function(request, response){
 		    "    <td>" + chatReceived + "</td>"+
 		    "    <td>" + chatReceivedReply + "</td>"+
 	            "</tr>"
-	        ); 
+	        );
+		for(var chat in chats)
+	        {
+		    if(chats[chat].messages !== undefined)
+		    {
+		        for(var j = 1; j < chats[chat].messages.length; j++)
+			{
+			
+			}
+		    }
+		}
 	    });
 	}
 
