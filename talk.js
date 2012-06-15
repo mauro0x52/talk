@@ -361,13 +361,53 @@ app.get('/panel', function(request, response){
 	{
 	    conversants[i].chats(function(conversant,chats){
 	        response.write(
+		    var chatStarted = 0,
+		        chatStartedReply = 0;
+			chatReceived = 0;
+			chatReceivedReply = 0;
+
+		    for(var i = 0; i < chats.length; i++)
+		    {
+		        var firstMessage = chats[i].messages[0];,
+			    meSend = false;
+			    otherSend = false;
+
+			for(var j = 1; j < chats[i].messages.length; j++)
+			{
+			    if(chats[i].messages[j].date < firstMessage.date)
+			    {
+			        firstMessage = chats[i].messages[j];
+			    }
+
+			    if(chats[i].messages[j].from.toString === conversant._id.toString())
+			    {
+			        meSend = true;
+			    }
+			    else
+			    {
+			        otherSend = true;
+			    }
+			}
+
+			if(firstMessage.from.toString() === conversant._id.toString())
+			{
+			    chatStarted++;
+			    if(otherSend) chatStartedReply++;
+			}
+			else
+			{
+			    chatReceived++;
+			    if(meSend) chatReceivedReply++;
+			}
+		    }
+
 	            "<tr>" +
 		    "    <td>" + conversant.label  + "</td>"+
 		    "    <td>" + chats.length + "</td>"+
-		    "    <td>" + chatstarted + "</td>"+
-		    "    <td></td>"+
-		    "    <td>" + chatreceived + "</td>"+
-		    "    <td></td>"+
+		    "    <td>" + chatStarted + "</td>"+
+		    "    <td>" + chatStartedReply + "</td>"+
+		    "    <td>" + chatReceived + "</td>"+
+		    "    <td>" + chatReceivedReply + "</td>"+
 	            "</tr>"
 	        ); 
 	    });

@@ -50,12 +50,10 @@ ConversantSchema.methods.chats = function(cb){
 	    if(messages[i].from.toString() === that._id.toString())
 	    {
 	        id = messages[i].to.toString();
-		messages[i].who = "me";
 	    }
 	    else
 	    {
 	        id = messages[i].from.toString();
-		messages[i].who = "other";
 	    }
 
 	    if(chats[id] === undefined && id !== that._id.toString())
