@@ -359,7 +359,7 @@ app.get('/panel', function(request, response){
 
 	for(var i = 0; i<conversants.length; i++)
 	{
-	    conversants[i].chats(function(conversant,chats,chatstarted,chatreceived){
+	    conversants[i].chats(function(conversant,chats){
 	        response.write(
 	            "<tr>" +
 		    "    <td>" + conversant.label  + "</td>"+

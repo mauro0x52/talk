@@ -67,9 +67,7 @@ ConversantSchema.methods.chats = function(cb){
 
 	    chats[id].messages.push(messages[i])
 	}
-
-	console.log(JSON.stringify(chats));
-        //cb(that,chats,chatStarted,chatReceived);
+        cb(that,chats);
     }); 
 };
 
