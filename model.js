@@ -37,11 +37,8 @@ var ConversantSchema = new schema({
  * retorna todos os chats do usuario
  */
 ConversantSchema.methods.chats = function(cb){
-    var chats = [];
-    var firstMessages = {};
+    var chats = {};
     var that = this;
-    var chatStarted = 0;
-    var chatReceived = 0;
 
     Message.find({$or : [{from : this._id}, {to : this._id}], status : 'read', message : {$nin : ['systemcontrolmessageuserstarttyping','systemcontrolmessageuserstoptyping']}},function(error, messages){
         if(error) throw error;
@@ -53,33 +50,26 @@ ConversantSchema.methods.chats = function(cb){
 	    if(messages[i].from.toString() === that._id.toString())
 	    {
 	        id = messages[i].to.toString();
-		from = "me";
+		messages[i].who = "me";
 	    }
 	    else
 	    {
 	        id = messages[i].from.toString();
-		from = "other";
+		messages[i].who = "other";
 	    }
 
-	    if(chats.indexOf(id) === -1 && id !== that._id.toString())
+	    if(chats[id] === undefined && id !== that._id.toString())
 	    {
-	        chats.push(id);
-		firstMessages[id] = {date : messages[i].date, who : from};
+	        chats[id] = {
+		    messages : []
+		};
 	    }
-	    else
-	    {
-	        if(firstMessages[id] > messages[i].date) firstMessages[id] = {date : messages[i].date, who : from};
-	    }
+
+	    chats[id].messages.push(messages[i])
 	}
 
-	for(var i = 0; i < chats.length; i++)
-	{
-	    if(firstMessages[chats[i]].who === "me") chatStarted++;
-	    else chatReceived ++;
-	}
-
-	console.log(JSON.stringify(firstMessages));
-        cb(that,chats,chatStarted,chatReceived);
+	console.log(JSON.stringify(chats));
+        //cb(that,chats,chatStarted,chatReceived);
     }); 
 };
 
