@@ -25,10 +25,6 @@ app.get('/(load)?', function(request,response){
     response.render('chat.ejs', {baseUrl : 'http://' + config.baseUrl + ':' + config.port + '/'});
 });
 
-app.error(function(err){
-    console.log(err);
-});
-
 var Conversant = model.Conversant;
 Conversant.find(function(error,conversants){
     for(var conversant in conversants)
@@ -292,8 +288,6 @@ app.get('/:userId/active-chats', function(request, response){
 	    response.end('({"error" : "Usuário deslogado"})');
 	    return;
 	}
-
-	console.log(conversant);
 
         conversant.refreshStatus();
         response.end("(" + JSON.stringify({error : "", activeChats : conversant.activeChats}) + ")");
