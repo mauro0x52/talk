@@ -343,7 +343,9 @@ app.get('/panel', function(request, response){
 	response.write(
 	    "<tr>"+
 	    "    <td>Usuario</td>"+
+	    "    <td>Empresa</td>"+
 	    "    <td>Total de Conversas</td>"+
+	    "    <td>Total de Conversas Efetivas</td>"+
 	    "    <td>Chat Started</td>"+
 	    "    <td>Chat Started Reply</td>"+
 	    "    <td>Chat Received</td>"+
@@ -401,28 +403,101 @@ app.get('/panel', function(request, response){
 		}
                 response.write(
 	            "<tr>" +
-		    "    <td>" + conversant.label  + "</td>"+
+		    "    <td> <a href='panel/" + conversant._id + "'>" + conversant.label  + " </a></td>"+
+		    "    <td>" + conversant.company  + "</td>"+
 		    "    <td>" + chatCount + "</td>"+
+		    "    <td>" + (chatStartedReply + chatReceivedReply) + "</td>"+
 		    "    <td>" + chatStarted + "</td>"+
 		    "    <td>" + chatStartedReply + "</td>"+
 		    "    <td>" + chatReceived + "</td>"+
 		    "    <td>" + chatReceivedReply + "</td>"+
 	            "</tr>"
 	        );
-		for(var chat in chats)
-	        {
-		    if(chats[chat].messages !== undefined)
-		    {
-		        for(var j = 1; j < chats[chat].messages.length; j++)
-			{
-			
-			}
-		    }
-		}
 	    });
 	}
 
 	setTimeout(function(){response.end("</table>")}, 2000);
+    });
+});
+
+/*----------------------------------------------------------------------------*/
+/** panel
+*
+* @ autor : Rafael Erthal
+* @ since : 2012-06
+*
+* @ description : painel de controle do chat
+*/
+ 
+app.get('/panel/:user_id', function(request, response){
+
+    var Conversant = model.Conversant;
+    Conversant.findById(request.params.user_id, function(error, conversant){
+        if(error) response.end('({"error" : "'+error+'"})');
+
+	conversant.chats(function(conversant,chats){
+ 	    response.write("<table border CELLSPACING='2px'>");
+
+           response.write(
+	        "<tr>"+
+	        "    <td>Conversas de " + conversant.label + "</td>"+
+	        "</tr>"
+	    );
+	    
+	    for(var chat in chats)
+	    {
+                Conversant.findById(chat, function(error, data){
+	            response.write(
+	                "<tr>" +
+		        "    <td><a href='/panel/" + request.params.user_id + "/" + chat + "'>" + data.label + "(" + chats[chat].messages.length + ")</a></td>" +
+	                "</tr>"
+	            );
+                });
+	    }
+
+            setTimeout(function(){response.end("</table>")}, 2000);
+	});
+    });
+});
+ 
+/*----------------------------------------------------------------------------*/
+/** panel
+*
+* @ autor : Rafael Erthal
+* @ since : 2012-06
+*
+* @ description : painel de controle do chat
+*/
+ 
+app.get('/panel/:user_id/:other_id', function(request, response){
+
+    var Conversant = model.Conversant;
+    Conversant.findById(request.params.user_id, function(error, conversant){
+        Conversant.findById(request.params.other_id, function(error, other){
+
+            if(error) response.end('({"error" : "'+error+'"})');
+
+	    conversant.chats(function(conversant,chats){
+ 	        response.write("<table border CELLSPACING='2px'>");
+
+                response.write(
+	            "<tr>"+
+	            "    <td>Conversas de " + conversant.label + " com " + other.label + "</td>"+
+	            "</tr>"
+	        );
+	    
+	        for(var i = 0; i < chats[request.params.other_id].messages.length; i++)
+	        {
+	            response.write(
+	                "<tr>" +
+		        "    <td>" + (chats[request.params.other_id].messages[i].from.toString() === conversant._id.toString() ? conversant.label : other.label) + " diz: " + chats[request.params.other_id].messages[i].message + "</td>" +
+	                "</tr>"
+	            );
+	        }
+
+                response.end("</table>")
+	    });
+	});
     });
 });
 /*----------------------------------------------------------------------------*/
