@@ -352,6 +352,7 @@ app.get('/panel', function(request, response){
 	    "    <td>Chat Received Reply</td>"+
 	    "</tr>"
 	);
+	var showed = 0;
 
 	for(var i = 0; i<conversants.length; i++)
 	{
@@ -413,10 +414,14 @@ app.get('/panel', function(request, response){
 		    "    <td>" + chatReceivedReply + "</td>"+
 	            "</tr>"
 	        );
+		showed++;
 	    });
 	}
 
-	setTimeout(function(){response.end("</table>")}, 2000);
+	setTimeout(function(){
+	    if(showed === conversants.length)
+	    response.end("</table>")
+	}, 500);
     });
 });
 
