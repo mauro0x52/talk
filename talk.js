@@ -404,7 +404,7 @@ app.get('/panel', function(request, response){
 		}
                 response.write(
 	            "<tr>" +
-		    "    <td> <a href='panel/" + conversant._id + "'>" + conversant.label  + " </a></td>"+
+		    "    <td> <a href='" + conversant._id + "'>" + conversant.label  + " </a></td>"+
 		    "    <td>" + conversant.company  + "</td>"+
 		    "    <td>" + chatCount + "</td>"+
 		    "    <td>" + (chatStartedReply + chatReceivedReply) + "</td>"+
@@ -417,11 +417,17 @@ app.get('/panel', function(request, response){
 		showed++;
 	    });
 	}
-
-	setTimeout(function(){
+        
+	function teste()
+        {
+	    console.log(showed + " " + conversants.length);
 	    if(showed === conversants.length)
-	    response.end("</table>")
-	}, 500);
+	        response.end("</table>");
+	    else
+	        setTimeout(teste, 500);
+        }
+
+	teste();
     });
 });
 
@@ -442,13 +448,19 @@ app.get('/panel/:user_id', function(request, response){
 
 	conversant.chats(function(conversant,chats){
  	    response.write("<table border CELLSPACING='2px'>");
-
+           var showed = 0;
+	   var total = 0;
            response.write(
 	        "<tr>"+
 	        "    <td>Conversas de " + conversant.label + "</td>"+
 	        "</tr>"
 	    );
 	    
+            for(var chat in chats)
+	    {
+	        total++;
+	    }
+
 	    for(var chat in chats)
 	    {
                 Conversant.findById(chat, function(error, data){
@@ -457,10 +469,21 @@ app.get('/panel/:user_id', function(request, response){
 		        "    <td><a href='/panel/" + request.params.user_id + "/" + chat + "'>" + data.label + "(" + chats[chat].messages.length + ")</a></td>" +
 	                "</tr>"
 	            );
+		    showed++;
                 });
 	    }
 
-            setTimeout(function(){response.end("</table>")}, 2000);
+        
+	    function teste()
+            {
+	        console.log(showed + " " + total);
+	        if(showed === total)
+	            response.end("</table>");
+	        else
+	            setTimeout(teste, 500);
+            }
+
+	    teste();
 	});
     });
 });
