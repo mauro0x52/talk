@@ -40,7 +40,7 @@ ConversantSchema.methods.chats = function(cb){
     var chats = {};
     var that = this;
 
-    Message.find({$or : [{from : this._id}, {to : this._id}], status : 'read', message : {$nin : ['systemcontrolmessageuserstarttyping','systemcontrolmessageuserstoptyping']}},function(error, messages){
+    MessageBkp.find({$or : [{from : this._id}, {to : this._id}], status : 'read', message : {$nin : ['systemcontrolmessageuserstarttyping','systemcontrolmessageuserstoptyping']}},function(error, messages){
         if(error) throw error;
 	for(var i = 0; i < messages.length; i++)
 	{

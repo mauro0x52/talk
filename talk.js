@@ -376,7 +376,7 @@ app.get('/:companyId/company-status', function(request, response){
  
 app.get('/panel', function(request, response){
 
-    var Conversant = model.Conversant;
+    var Conversant = model.ConversantBkp;
     
     Conversant.find({label : {$ne : 'Visitante'}},function(error, conversants){
         if(error) response.end('({"error" : "'+error+'"})');
@@ -484,7 +484,7 @@ app.get('/panel', function(request, response){
  
 app.get('/panel/:user_id', function(request, response){
 
-    var Conversant = model.Conversant;
+    var Conversant = model.ConversantBkp;
     Conversant.findById(request.params.user_id, function(error, conversant){
         if(error) response.end('({"error" : "'+error+'"})');
 
@@ -497,11 +497,6 @@ app.get('/panel/:user_id', function(request, response){
 	        "    <td>Conversas de " + conversant.label + "</td>"+
 	        "</tr>"
 	    );
-	    
-            for(var chat in chats)
-	    {
-	        total++;
-	    }
 
 	    for(var chat in chats)
 	    {
@@ -513,6 +508,7 @@ app.get('/panel/:user_id', function(request, response){
 	            );
 		    showed++;
                 });
+	        total++;
 	    }
 
         
@@ -541,7 +537,7 @@ app.get('/panel/:user_id', function(request, response){
  
 app.get('/panel/:user_id/:other_id', function(request, response){
 
-    var Conversant = model.Conversant;
+    var Conversant = model.ConversantBkp;
     Conversant.findById(request.params.user_id, function(error, conversant){
         Conversant.findById(request.params.other_id, function(error, other){
 
