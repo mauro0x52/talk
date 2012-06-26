@@ -26,11 +26,34 @@ app.get('/(load)?', function(request,response){
 });
 
 var Conversant = model.Conversant;
+var ConversantBkp = model.ConversantBkp;
+
 Conversant.find(function(error,conversants){
-    for(var conversant in conversants)
-    {
-        conversants[conversant].disconnect();
-    }
+    conversants.forEach(function(conversant){
+
+        conversant.disconnect();
+
+	ConversantBkp.findOne({user : conversant.user}, function(conversantbkp){
+	    if(conversantbkp === undefined){
+
+	        conversantbkp = new ConversantBkp({
+                    company     : conversant.company,
+                    user        : conversant.user ,
+                    label       : conversant.label ,
+                    typing      : conversant.typing ,
+                    status      : conversant.status ,
+                    lastCheck   : conversant.lastCheck, 
+                    activeChats : conversant.activeChats
+		});
+
+		conversantbkp.save(function(error){
+		
+		});
+
+		conversant.remove(function(error){});
+	    }
+	});
+    });
 });
 /*----------------------------------------------------------------------------*/
 /** connect

@@ -259,6 +259,7 @@ ConversantSchema.methods.checkStatus = function(){
 };
 
 var Conversant = mongoose.model('Conversant', ConversantSchema);
+var ConversantBkp = mongoose.model('ConversantBkp', ConversantSchema);
 
 /*----------------------------------------------------------------------------*/
 /** Message
@@ -284,6 +285,7 @@ MessageSchema.methods.read = function(){
 };
 
 var Message = mongoose.model('Message', MessageSchema);
+var MessageBkp = mongoose.model('MessageBkp', MessageSchema);
 
 /*----------------------------------------------------------------------------*/
                          /* Montagem do namespace */
@@ -292,8 +294,8 @@ module.exports = {
     Message          : Message ,
     Conversant       : Conversant ,
 
-    MessageSchema    : MessageSchema,
-    ConversantSchema : ConversantSchema
+    MessageBkp    : MessageBkp,
+    ConversantBkp : ConversantBkp
 }
 
 /*----------------------------------------------------------------------------*/
