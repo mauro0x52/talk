@@ -26,7 +26,9 @@ app.get('/(load)?', function(request,response){
 });
 
 var Conversant = model.Conversant;
+var Message = model.Message;
 var ConversantBkp = model.ConversantBkp;
+var MessageBkp = model.MessageBkp;
 
 Conversant.find(function(error,conversants){
     conversants.forEach(function(conversant){
@@ -34,9 +36,10 @@ Conversant.find(function(error,conversants){
         conversant.disconnect();
 
 	ConversantBkp.findOne({user : conversant.user}, function(conversantbkp){
-	    if(conversantbkp === undefined){
-
-	        conversantbkp = new ConversantBkp({
+            console.log(conversantbkp);
+	    if(conversantbkp === null){
+	        var conversantbkp = new ConversantBkp({
+		    _id         : conversant._id,
                     company     : conversant.company,
                     user        : conversant.user ,
                     label       : conversant.label ,
@@ -46,15 +49,31 @@ Conversant.find(function(error,conversants){
                     activeChats : conversant.activeChats
 		});
 
-		conversantbkp.save(function(error){
-		
-		});
-
+		conversantbkp.save(function(error){});
 		conversant.remove(function(error){});
 	    }
 	});
     });
 });
+
+Message.find(function(error,messages){
+    messages.forEach(function(message){
+
+        var messagebkp = new MessageBkp({
+            _id        : message._id,
+            message    : message.message,
+            from       : message.from ,
+            to         : message.to ,
+            status     : message.status,
+            date       : message.date
+	});
+
+	messagebkp.save(function(error){});
+	message.remove(function(error){});
+
+    });
+});
+
 /*----------------------------------------------------------------------------*/
 /** connect
 *
