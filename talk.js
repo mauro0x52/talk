@@ -446,7 +446,7 @@ app.get('/panel', function(request, response){
 		}
                 response.write(
 	            "<tr>" +
-		    "    <td> <a href='" + conversant._id + "'>" + conversant.label  + " </a></td>"+
+		    "    <td> <a href='/panel/" + conversant._id + "'>" + conversant.label  + " </a></td>"+
 		    "    <td>" + conversant.company  + "</td>"+
 		    "    <td>" + chatCount + "</td>"+
 		    "    <td>" + (chatStartedReply + chatReceivedReply) + "</td>"+
@@ -503,7 +503,7 @@ app.get('/panel/:user_id', function(request, response){
                 Conversant.findById(chat, function(error, data){
 	            response.write(
 	                "<tr>" +
-		        "    <td><a href='/panel/" + request.params.user_id + "/" + chat + "'>" + data.label + "(" + chats[chat].messages.length + ")</a></td>" +
+		        "    <td><a href='/panel/" + request.params.user_id + "/" + data._id + "'>" + data.label + "(" + chats[chat].messages.length + ")</a></td>" +
 	                "</tr>"
 	            );
 		    showed++;
