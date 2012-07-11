@@ -405,66 +405,63 @@ app.get('/panel', function(request, response){
 		    chatReceivedReply = 0,
 		    chatCount = 0;
 		    
-		if(chats.length > 0){
-			for(var chat in chats)
+		for(var chat in chats){
+		    if(chats[chat].messages !== undefined)
+		    {
+		        var firstMessage = chats[chat].messages[0],
+		            meSend = false,
+		            otherSend = false;
+
+		        for(var j = 1; j < chats[chat].messages.length; j++)
 		        {
-			    if(chats[chat].messages !== undefined)
-			    {
-			        var firstMessage = chats[chat].messages[0],
-			            meSend = false,
-			            otherSend = false;
-	
-			        for(var j = 1; j < chats[chat].messages.length; j++)
-			        {
-			            if(chats[chat].messages[j].date < firstMessage.date)
-			            {
-			                firstMessage = chats[chat].messages[j];
-			            }
-	
-			            if(chats[chat].messages[j].from.toString() === conversant._id.toString())
-			            {
-			                meSend = true;
-			            }
-			            else
-			            {
-			                otherSend = true;
-			            }
-			        }
-	
-			        if(firstMessage.from.toString() === conversant._id.toString())
-			        {
-			            chatStarted++;
-			            if(otherSend) chatStartedReply++;
-			        }
-			        else
-			        {
-			            chatReceived++;
-			            if(meSend) chatReceivedReply++;
-		                }
-	
-				chatCount++;
-			    }
-			}
-	                response.write(
-		            "<tr>" +
-			    "    <td> <a href='/panel/" + conversant._id + "'>" + conversant.label  + " </a></td>"+
-			    "    <td>" + conversant.company  + "</td>"+
-			    "    <td>" + chatCount + "</td>"+
-			    "    <td>" + (chatStartedReply + chatReceivedReply) + "</td>"+
-			    "    <td>" + chatStarted + "</td>"+
-			    "    <td>" + chatStartedReply + "</td>"+
-			    "    <td>" + chatReceived + "</td>"+
-			    "    <td>" + chatReceivedReply + "</td>"+
-		            "</tr>"
-		        );
+		            if(chats[chat].messages[j].date < firstMessage.date)
+		            {
+		                firstMessage = chats[chat].messages[j];
+		            }
+
+		            if(chats[chat].messages[j].from.toString() === conversant._id.toString())
+		            {
+		                meSend = true;
+		            }
+		            else
+		            {
+		                otherSend = true;
+		            }
+		        }
+
+		        if(firstMessage.from.toString() === conversant._id.toString())
+		        {
+		            chatStarted++;
+		            if(otherSend) chatStartedReply++;
+		        }
+		        else
+		        {
+		            chatReceived++;
+		            if(meSend) chatReceivedReply++;
+                }
+
+			chatCount++;
+		    }
 		}
-		
+		if(chatCount > 0){
+            response.write(
+                "<tr>" +
+                "    <td> <a href='/panel/" + conversant._id + "'>" + conversant.label  + " </a></td>"+
+                "    <td>" + conversant.company  + "</td>"+
+                "    <td>" + chatCount + "</td>"+
+                "    <td>" + (chatStartedReply + chatReceivedReply) + "</td>"+
+                "    <td>" + chatStarted + "</td>"+
+                "    <td>" + chatStartedReply + "</td>"+
+                "    <td>" + chatReceived + "</td>"+
+                "    <td>" + chatReceivedReply + "</td>"+
+                "</tr>"
+            );
+		}
 		showed++;
 	    });
 	}
         
-	function teste()
-        {
+	function teste(){
 	    console.log(showed + " " + conversants.length);
 	    if(showed === conversants.length)
 	        response.end("</table>");
